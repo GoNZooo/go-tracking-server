@@ -10,12 +10,12 @@ import (
 )
 
 type Event struct {
-	Name       string                 `json:"name"`
-	Ip         string                 `json:"ip"`
-	Uuid       uuid.UUID              `json:"uuid"`
+	Name       string                 `json:"name" pg:",notnull"`
+	Ip         string                 `json:"ip" pg:",notnull"`
+	Uuid       uuid.UUID              `json:"uuid" pg:",notnull"`
 	Parameters map[string]interface{} `json:"parameters"`
-	InsertedAt time.Time              `json:"insertedAt"`
-	UpdatedAt  time.Time              `json:"updatedAt"`
+	InsertedAt time.Time              `json:"insertedAt" pg:",notnull"`
+	UpdatedAt  time.Time              `json:"updatedAt" pg:",notnull"`
 }
 
 func ConnectToDatabase(host string, port int, user string, password string, database string) (*pg.DB, error) {

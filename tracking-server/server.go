@@ -40,6 +40,7 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 
 		if err := InsertEvent(database, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
+			log.Printf("Error writing event: %+#v: %s", event, err.Error())
 
 			return
 		}

@@ -54,10 +54,7 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 		}
 
 		requestBody := request.Body
-		requestIp := request.Header.Get("X-Real-Ip")
-		if requestIp == "" {
-			requestIp = strings.Split(request.RemoteAddr, ":")[0]
-		}
+		requestIp := headerOrDefault(request.Header, "X-Real-Ip", strings.Split(request.RemoteAddr, ":")[0])
 
 		if requestBody == nil {
 			http.Error(writer, "Need event data", http.StatusBadRequest)
@@ -108,5 +105,15 @@ func Serve(port int, database DatabaseOptions) {
 
 	if err := http.ListenAndServe(portSpecification, nil); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// Returns the existing header value if it exists, otherwise the default value. `headerName` is not case-sensitive,
+// since this uses `Header.Get()` internally.
+func headerOrDefault(header http.Header, headerName string, defaultValue string) string {
+	if value := header.Get(headerName); value != "" {
+		return value
+	} else {
+		return defaultValue
 	}
 }

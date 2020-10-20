@@ -23,20 +23,15 @@ func main() {
 
 	fmt.Println("Starting server on port", port)
 
-	databaseHost := requireEnvironmentValue("DATABASE_HOST")
-	databasePort := requireEnvironmentInteger("DATABASE_PORT")
-	databaseDatabase := requireEnvironmentValue("DATABASE_DATABASE")
-	databaseUser := requireEnvironmentValue("DATABASE_USER")
-	databasePassword := requireEnvironmentValue("DATABASE_PASSWORD")
+	databaseOptions := trackingserver.DatabaseOptions{
+		Host:     requireEnvironmentValue("DATABASE_HOST"),
+		Port:     requireEnvironmentInteger("DATABASE_PORT"),
+		Database: requireEnvironmentValue("DATABASE_DATABASE"),
+		User:     requireEnvironmentValue("DATABASE_USER"),
+		Password: requireEnvironmentValue("DATABASE_PASSWORD"),
+	}
 
-	trackingserver.Serve(
-		int(port),
-		databaseHost,
-		databasePort,
-		databaseDatabase,
-		databaseUser,
-		databasePassword,
-	)
+	trackingserver.Serve(int(port), databaseOptions)
 }
 
 func requireEnvironmentValue(key string) string {

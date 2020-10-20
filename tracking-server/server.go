@@ -52,10 +52,10 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 	}
 }
 
-func Serve(port int, databaseHost string, databasePort int, databaseDatabase string, databaseUser string, databasePassword string) {
+func Serve(port int, database DatabaseOptions) {
 	portSpecification := fmt.Sprintf(":%d", port)
 	fileServer := http.FileServer(http.Dir("./static"))
-	db, err := ConnectToDatabase(databaseHost, databasePort, databaseUser, databasePassword, databaseDatabase)
+	db, err := ConnectToDatabase(database)
 	if err != nil {
 		panic(err)
 	}

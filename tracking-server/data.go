@@ -18,12 +18,20 @@ type Event struct {
 	UpdatedAt  time.Time              `json:"updatedAt" pg:",notnull"`
 }
 
-func ConnectToDatabase(host string, port int, user string, password string, database string) (*pg.DB, error) {
+type DatabaseOptions struct {
+	Host     string
+	Port     int
+	Database string
+	User     string
+	Password string
+}
+
+func ConnectToDatabase(database DatabaseOptions) (*pg.DB, error) {
 	connection := pg.Connect(&pg.Options{
-		Addr:     fmt.Sprintf("%s:%d", host, port),
-		User:     user,
-		Password: password,
-		Database: database,
+		Addr:     fmt.Sprintf("%s:%d", database.Host, database.Port),
+		User:     database.User,
+		Password: database.Password,
+		Database: database.Database,
 	})
 
 	if err := createSchema(connection); err != nil {

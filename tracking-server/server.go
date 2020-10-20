@@ -12,6 +12,39 @@ import (
 	"github.com/google/uuid"
 )
 
+func initiateEventStreamHandler(database *pg.DB) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != "POST" {
+			http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+
+			return
+		}
+
+		id, err := uuid.NewUUID()
+		if err != nil {
+			log.Println("Error creating stream ID:", err.Error())
+			http.Error(writer, "ERROR_NO_STREAM_ID", http.StatusInternalServerError)
+
+			return
+		}
+
+		timeNow := time.Now()
+		stream := Stream{Id: id, InsertedAt: timeNow, UpdatedAt: timeNow}
+		if err := InsertStream(database, &stream); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			log.Printf("Error making new stream: %#v: %s", stream, err.Error())
+
+			return
+		}
+
+		if _, err := fmt.Fprintf(writer, "%s", id.String()); err != nil {
+			log.Println("Unable to send stream ID response:", err.Error())
+
+			return
+		}
+	}
+}
+
 func eventHandler(database *pg.DB) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if request.Method != "POST" {
@@ -66,8 +99,11 @@ func Serve(port int, database DatabaseOptions) {
 		panic(err)
 	}
 
+	// static
 	http.Handle("/js/", fileServer)
 
+	// events
+	http.HandleFunc("/events/initiate", initiateEventStreamHandler(db))
 	http.HandleFunc("/events", eventHandler(db))
 
 	if err := http.ListenAndServe(portSpecification, nil); err != nil {

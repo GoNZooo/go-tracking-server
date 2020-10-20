@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/google/uuid"
@@ -13,8 +15,15 @@ import (
 func eventHandler(database *pg.DB) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		requestBody := request.Body
+		requestIp := request.Header.Get("X-Real-Ip")
+		if requestIp == "" {
+			requestIp = strings.Split(request.RemoteAddr, ":")[0]
+		}
+
 		if requestBody == nil {
 			http.Error(writer, "Need event data", http.StatusBadRequest)
+
+			return
 		}
 
 		var event Event
@@ -31,6 +40,8 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 
 		if err := InsertEvent(database, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
+
+			return
 		}
 
 		_, err := fmt.Fprintf(writer, "{\"status\":\"ok\"}")

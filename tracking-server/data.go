@@ -2,6 +2,7 @@ package tracking_server
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
@@ -13,6 +14,8 @@ type Event struct {
 	Ip         string                 `json:"ip"`
 	Uuid       uuid.UUID              `json:"uuid"`
 	Parameters map[string]interface{} `json:"parameters"`
+	InsertedAt time.Time              `json:"insertedAt"`
+	UpdatedAt  time.Time              `json:"updatedAt"`
 }
 
 func ConnectToDatabase(host string, port int, user string, password string, database string) (*pg.DB, error) {

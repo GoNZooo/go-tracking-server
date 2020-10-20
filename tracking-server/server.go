@@ -24,6 +24,10 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 			return
 		}
 		event.Uuid = uuid.New()
+		event.Ip = requestIp
+		timeNow := time.Now()
+		event.InsertedAt = timeNow
+		event.UpdatedAt = timeNow
 
 		if err := InsertEvent(database, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)

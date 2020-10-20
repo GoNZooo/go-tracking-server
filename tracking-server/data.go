@@ -26,7 +26,7 @@ func ConnectToDatabase(host string, port int, user string, password string, data
 		Database: database,
 	})
 
-	if err := CreateSchema(connection); err != nil {
+	if err := createSchema(connection); err != nil {
 		panic(err)
 	}
 
@@ -41,7 +41,7 @@ func InsertEvent(db *pg.DB, event *Event) error {
 	return nil
 }
 
-func CreateSchema(db *pg.DB) error {
+func createSchema(db *pg.DB) error {
 	models := []interface{}{(*Event)(nil)}
 
 	for _, model := range models {

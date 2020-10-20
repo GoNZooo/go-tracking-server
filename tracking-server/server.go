@@ -14,6 +14,12 @@ import (
 
 func eventHandler(database *pg.DB) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != "POST" {
+			http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+
+			return
+		}
+
 		requestBody := request.Body
 		requestIp := request.Header.Get("X-Real-Ip")
 		if requestIp == "" {

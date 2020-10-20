@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// A `Stream` identifies a series of events that all happen in the same session on a page.
 type Stream struct {
 	Id         uuid.UUID `pg:"type:uuid,pk"`
 	Events     []Event   `pg:"rel:has-many"`
@@ -16,15 +17,27 @@ type Stream struct {
 	UpdatedAt  time.Time `json:"updatedAt" pg:",notnull"`
 }
 
+// An `Event` represents an action on a page, such as the loading of the page, or hovering/mouseover on an element.
 type Event struct {
-	Name       string                 `json:"name" pg:",notnull"`
-	Ip         string                 `json:"ip" pg:",notnull"`
-	Uuid       uuid.UUID              `json:"uuid" pg:"type:uuid,unique,notnull"`
+	// Identifies the type of the event.
+	Name string `json:"name" pg:",notnull"`
+
+	// Identifies the IP address that spawned the event.
+	Ip string `json:"ip" pg:",notnull"`
+
+	// A unique identifier for the event, such that it can be identified. This is meant only for uniqueness.
+	Uuid uuid.UUID `json:"uuid" pg:"type:uuid,unique,notnull"`
+
+	// Extra parameters; this can be different for each event and the only commonality that definitely should exist
+	// is that it is a map from strings to values.
 	Parameters map[string]interface{} `json:"parameters"`
-	StreamID   uuid.UUID              `json:"streamId" pg:"type:uuid,notnull"`
-	Stream     *Stream                `json:"stream" pg:"rel:has-one"`
-	InsertedAt time.Time              `json:"insertedAt" pg:",notnull"`
-	UpdatedAt  time.Time              `json:"updatedAt" pg:",notnull"`
+
+	// Identifies the stream that the event belongs to. This is useful for grouping the events into a session.
+	StreamID uuid.UUID `json:"streamId" pg:"type:uuid,notnull"`
+	Stream   *Stream   `json:"stream" pg:"rel:has-one"`
+
+	InsertedAt time.Time `json:"insertedAt" pg:",notnull"`
+	UpdatedAt  time.Time `json:"updatedAt" pg:",notnull"`
 }
 
 type DatabaseOptions struct {

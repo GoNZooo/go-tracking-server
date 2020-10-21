@@ -10,16 +10,33 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 )
 
-func initiateEventStreamHandler(database *pg.DB) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method != "POST" {
-			http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+type Server struct {
+	database *pg.DB
+	router   *httprouter.Router
+}
 
-			return
-		}
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
+}
 
+func (s *Server) setupRoutes() {
+	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
+	s.router.HandlerFunc("POST", "/events/initiate", s.handleInitiateEventStream())
+	s.router.HandlerFunc("POST", "/events", s.handleEvent())
+}
+
+func InitializeServer() *Server {
+	server := &Server{router: httprouter.New()}
+	server.setupRoutes()
+
+	return server
+}
+
+func (s *Server) handleInitiateEventStream() http.HandlerFunc {
+	return func(writer http.ResponseWriter, _ *http.Request) {
 		id, err := uuid.NewUUID()
 		if err != nil {
 			log.Println("Error creating stream ID:", err.Error())
@@ -30,7 +47,7 @@ func initiateEventStreamHandler(database *pg.DB) http.HandlerFunc {
 
 		timeNow := time.Now()
 		stream := Stream{Id: id, InsertedAt: timeNow, UpdatedAt: timeNow}
-		if err := InsertStream(database, &stream); err != nil {
+		if err := InsertStream(s.database, &stream); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error making new stream: %#v: %s", stream, err.Error())
 
@@ -45,14 +62,8 @@ func initiateEventStreamHandler(database *pg.DB) http.HandlerFunc {
 	}
 }
 
-func eventHandler(database *pg.DB) http.HandlerFunc {
+func (s *Server) handleEvent() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method != "POST" {
-			http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
-
-			return
-		}
-
 		requestBody := request.Body
 		requestIp := headerOrDefault(request.Header, "X-Real-Ip", strings.Split(request.RemoteAddr, ":")[0])
 
@@ -74,7 +85,7 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 		event.InsertedAt = timeNow
 		event.UpdatedAt = timeNow
 
-		if err := InsertEvent(database, &event); err != nil {
+		if err := InsertEvent(s.database, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error writing event: %#v: %s", event, err.Error())
 
@@ -88,22 +99,15 @@ func eventHandler(database *pg.DB) http.HandlerFunc {
 	}
 }
 
-func Serve(port int, database DatabaseOptions) {
+func (s *Server) Serve(port int, database DatabaseOptions) {
 	portSpecification := fmt.Sprintf(":%d", port)
-	fileServer := http.FileServer(http.Dir("./static"))
 	db, err := ConnectToDatabase(database)
 	if err != nil {
 		panic(err)
 	}
+	s.database = db
 
-	// static
-	http.Handle("/js/", fileServer)
-
-	// events
-	http.HandleFunc("/events/initiate", initiateEventStreamHandler(db))
-	http.HandleFunc("/events", eventHandler(db))
-
-	if err := http.ListenAndServe(portSpecification, nil); err != nil {
+	if err := http.ListenAndServe(portSpecification, s); err != nil {
 		log.Fatal(err)
 	}
 }

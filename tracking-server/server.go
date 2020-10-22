@@ -18,6 +18,13 @@ type Server struct {
 	router   *httprouter.Router
 }
 
+func NewServer() *Server {
+	server := &Server{router: httprouter.New()}
+	server.setupRoutes()
+
+	return server
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
@@ -26,13 +33,6 @@ func (s *Server) setupRoutes() {
 	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
 	s.router.HandlerFunc("POST", "/events/initiate", s.handleInitiateEventStream())
 	s.router.HandlerFunc("POST", "/events", s.handleEvent())
-}
-
-func InitializeServer() *Server {
-	server := &Server{router: httprouter.New()}
-	server.setupRoutes()
-
-	return server
 }
 
 func (s *Server) handleInitiateEventStream() http.HandlerFunc {

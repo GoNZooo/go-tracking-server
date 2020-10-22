@@ -40,7 +40,7 @@ func (s *Server) handleInitiateEventStream() http.HandlerFunc {
 		id, err := uuid.NewUUID()
 		if err != nil {
 			log.Println("Error creating stream ID:", err.Error())
-			http.Error(writer, "ERROR_NO_STREAM_ID", http.StatusInternalServerError)
+			http.Error(writer, "stream id could not be created", http.StatusInternalServerError)
 
 			return
 		}
@@ -68,7 +68,7 @@ func (s *Server) handleEvent() http.HandlerFunc {
 		requestIp := headerOrDefault(request.Header, "X-Real-Ip", strings.Split(request.RemoteAddr, ":")[0])
 
 		if requestBody == nil {
-			http.Error(writer, "Need event data", http.StatusBadRequest)
+			http.Error(writer, "need event data", http.StatusBadRequest)
 
 			return
 		}
@@ -79,6 +79,7 @@ func (s *Server) handleEvent() http.HandlerFunc {
 
 			return
 		}
+
 		event.Uuid = uuid.New()
 		event.Ip = requestIp
 		timeNow := time.Now()
@@ -94,7 +95,7 @@ func (s *Server) handleEvent() http.HandlerFunc {
 
 		_, err := fmt.Fprintf(writer, "{\"status\":\"ok\"}")
 		if err != nil {
-			log.Println("Error writing for request:", err.Error())
+			log.Println("Error writing to socket for request:", err.Error())
 		}
 	}
 }

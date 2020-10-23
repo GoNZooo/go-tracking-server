@@ -31,7 +31,7 @@ func main() {
 		Password: requireEnvironmentValue("DATABASE_PASSWORD"),
 	}
 
-	server := trackingserver.NewServer()
+	server := trackingserver.Server{}
 	server.Serve(int(port), databaseOptions)
 }
 

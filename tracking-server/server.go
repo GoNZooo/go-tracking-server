@@ -26,13 +26,10 @@ func (s *Server) Serve(port int, database DatabaseOptions) {
 	}
 }
 
-func NewServer() *Server {
-	server := &Server{router: httprouter.New()}
-
-	return server
-}
-
 func (s *Server) setupRoutes(db *pg.DB) {
+	if s.router == nil {
+		s.router = httprouter.New()
+	}
 	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
 	s.router.HandlerFunc("POST", "/events/initiate", handleInitiateEventStream(db))
 	s.router.HandlerFunc("POST", "/events", handleEvent(db))

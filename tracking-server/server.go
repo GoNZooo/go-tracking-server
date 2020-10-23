@@ -65,7 +65,8 @@ func (s *Server) handleInitiateEventStream() http.HandlerFunc {
 func (s *Server) handleEvent() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		requestBody := request.Body
-		requestIp := headerOrDefault(request.Header, "X-Real-Ip", strings.Split(request.RemoteAddr, ":")[0])
+		ipFromRemoteAddress := strings.Split(request.RemoteAddr, ":")[0]
+		requestIp := headerOrDefault(request.Header, "X-Real-Ip", ipFromRemoteAddress)
 
 		if requestBody == nil {
 			http.Error(writer, "need event data", http.StatusBadRequest)

@@ -31,8 +31,22 @@ func (s *Server) setupRoutes(db *pg.DB) {
 		s.router = httprouter.New()
 	}
 	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
-	s.router.HandlerFunc("POST", "/events/initiate", handleInitiateEventStream(db))
-	s.router.HandlerFunc("POST", "/events", handleEvent(db))
+	s.addHandlerFunctions([]routeSpecification{
+		{"POST", "/events/initiate", handleInitiateEventStream(db)},
+		{"POST", "/events", handleEvent(db)},
+	})
+}
+
+type routeSpecification struct {
+	method  string
+	path    string
+	handler http.HandlerFunc
+}
+
+func (s *Server) addHandlerFunctions(specifications []routeSpecification) {
+	for _, spec := range specifications {
+		s.router.HandlerFunc(spec.method, spec.path, spec.handler)
+	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -14,13 +14,11 @@ import (
 )
 
 type Server struct {
-	database *pg.DB
-	router   *httprouter.Router
+	router *httprouter.Router
 }
 
 func NewServer() *Server {
 	server := &Server{router: httprouter.New()}
-	server.setupRoutes()
 
 	return server
 }
@@ -29,13 +27,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s *Server) setupRoutes() {
+func (s *Server) setupRoutes(db *pg.DB) {
 	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
-	s.router.HandlerFunc("POST", "/events/initiate", s.handleInitiateEventStream())
-	s.router.HandlerFunc("POST", "/events", s.handleEvent())
+	s.router.HandlerFunc("POST", "/events/initiate", s.handleInitiateEventStream(db))
+	s.router.HandlerFunc("POST", "/events", s.handleEvent(db))
 }
 
-func (s *Server) handleInitiateEventStream() http.HandlerFunc {
+func (s *Server) handleInitiateEventStream(db *pg.DB) http.HandlerFunc {
 	return func(writer http.ResponseWriter, _ *http.Request) {
 		id, err := uuid.NewUUID()
 		if err != nil {
@@ -47,7 +45,7 @@ func (s *Server) handleInitiateEventStream() http.HandlerFunc {
 
 		timeNow := time.Now()
 		stream := Stream{Id: id, InsertedAt: timeNow, UpdatedAt: timeNow}
-		if err := InsertStream(s.database, &stream); err != nil {
+		if err := InsertStream(db, &stream); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error making new stream: %#v: %s", stream, err.Error())
 
@@ -62,7 +60,7 @@ func (s *Server) handleInitiateEventStream() http.HandlerFunc {
 	}
 }
 
-func (s *Server) handleEvent() http.HandlerFunc {
+func (s *Server) handleEvent(db *pg.DB) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		requestBody := request.Body
 		ipFromRemoteAddress := strings.Split(request.RemoteAddr, ":")[0]
@@ -87,7 +85,7 @@ func (s *Server) handleEvent() http.HandlerFunc {
 		event.InsertedAt = timeNow
 		event.UpdatedAt = timeNow
 
-		if err := InsertEvent(s.database, &event); err != nil {
+		if err := InsertEvent(db, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error writing event: %#v: %s", event, err.Error())
 
@@ -107,7 +105,7 @@ func (s *Server) Serve(port int, database DatabaseOptions) {
 	if err != nil {
 		panic(err)
 	}
-	s.database = db
+	s.setupRoutes(db)
 
 	if err := http.ListenAndServe(portSpecification, s); err != nil {
 		log.Fatal(err)

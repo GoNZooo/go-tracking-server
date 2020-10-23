@@ -32,25 +32,9 @@ func (s *Server) setupRoutes(db *pg.DB) {
 	}
 	s.router.ServeFiles("/js/*filepath", http.Dir("./static/js"))
 	s.addHandlerFunctions([]routeSpecification{
-		{"POST", "/events/initiate", handleInitiateEventStream(db)},
-		{"POST", "/events", handleEvent(db)},
+		post{"/events/initiate", handleInitiateEventStream(db)},
+		post{"/events", handleEvent(db)},
 	})
-}
-
-type routeSpecification struct {
-	method  string
-	path    string
-	handler http.HandlerFunc
-}
-
-func (s *Server) addHandlerFunctions(specifications []routeSpecification) {
-	for _, spec := range specifications {
-		s.router.HandlerFunc(spec.method, spec.path, spec.handler)
-	}
-}
-
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
 }
 
 // Returns the existing header value if it exists, otherwise the default value. `headerName` is not case-sensitive,
@@ -61,4 +45,8 @@ func headerOrDefault(header http.Header, headerName string, defaultValue string)
 	} else {
 		return defaultValue
 	}
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
 }

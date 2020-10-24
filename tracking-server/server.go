@@ -15,7 +15,7 @@ type Server struct {
 
 func (s *Server) Serve(port int, database DatabaseOptions) {
 	portSpecification := fmt.Sprintf(":%d", port)
-	db, err := ConnectToDatabase(database)
+	db, err := connectToDatabase(database)
 	if err != nil {
 		panic(err)
 	}

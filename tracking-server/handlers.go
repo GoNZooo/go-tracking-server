@@ -23,8 +23,8 @@ func handleInitiateEventStream(db *pg.DB) http.HandlerFunc {
 		}
 
 		timeNow := time.Now()
-		stream := Stream{Id: id, InsertedAt: timeNow, UpdatedAt: timeNow}
-		if err := InsertStream(db, &stream); err != nil {
+		stream := stream{Id: id, InsertedAt: timeNow, UpdatedAt: timeNow}
+		if err := insertStream(db, &stream); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error making new stream: %#v: %s", stream, err.Error())
 
@@ -51,7 +51,7 @@ func handleEvent(db *pg.DB) http.HandlerFunc {
 			return
 		}
 
-		var event Event
+		var event event
 		if err := json.NewDecoder(requestBody).Decode(&event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 
@@ -64,7 +64,7 @@ func handleEvent(db *pg.DB) http.HandlerFunc {
 		event.InsertedAt = timeNow
 		event.UpdatedAt = timeNow
 
-		if err := InsertEvent(db, &event); err != nil {
+		if err := insertEvent(db, &event); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			log.Printf("Error writing event: %#v: %s", event, err.Error())
 

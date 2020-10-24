@@ -9,16 +9,16 @@ import (
 	"github.com/google/uuid"
 )
 
-// A `Stream` identifies a series of events that all happen in the same session on a page.
-type Stream struct {
+// A `stream` identifies a series of events that all happen in the same session on a page.
+type stream struct {
 	Id         uuid.UUID `pg:"type:uuid,pk"`
-	Events     []Event   `pg:"rel:has-many"`
+	Events     []event   `pg:"rel:has-many"`
 	InsertedAt time.Time `json:"insertedAt" pg:",notnull"`
 	UpdatedAt  time.Time `json:"updatedAt" pg:",notnull"`
 }
 
-// An `Event` represents an action on a page, such as the loading of the page, or hovering/mouseover on an element.
-type Event struct {
+// An `event` represents an action on a page, such as the loading of the page, or hovering/mouseover on an element.
+type event struct {
 	// Identifies the type of the event.
 	Name string `json:"name" pg:",notnull"`
 
@@ -34,7 +34,7 @@ type Event struct {
 
 	// Identifies the stream that the event belongs to. This is useful for grouping the events into a session.
 	StreamID uuid.UUID `json:"streamId" pg:"type:uuid,notnull"`
-	Stream   *Stream   `json:"stream" pg:"rel:has-one"`
+	Stream   *stream   `json:"stream" pg:"rel:has-one"`
 
 	InsertedAt time.Time `json:"insertedAt" pg:",notnull"`
 	UpdatedAt  time.Time `json:"updatedAt" pg:",notnull"`
@@ -48,7 +48,7 @@ type DatabaseOptions struct {
 	Password string
 }
 
-func ConnectToDatabase(database DatabaseOptions) (*pg.DB, error) {
+func connectToDatabase(database DatabaseOptions) (*pg.DB, error) {
 	connection := pg.Connect(&pg.Options{
 		Addr:     fmt.Sprintf("%s:%d", database.Host, database.Port),
 		User:     database.User,
@@ -63,7 +63,7 @@ func ConnectToDatabase(database DatabaseOptions) (*pg.DB, error) {
 	return connection, nil
 }
 
-func InsertEvent(db *pg.DB, event *Event) error {
+func insertEvent(db *pg.DB, event *event) error {
 	if _, err := db.Model(event).Insert(); err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func InsertEvent(db *pg.DB, event *Event) error {
 	return nil
 }
 
-func InsertStream(db *pg.DB, stream *Stream) error {
+func insertStream(db *pg.DB, stream *stream) error {
 	if _, err := db.Model(stream).Insert(); err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func InsertStream(db *pg.DB, stream *Stream) error {
 }
 
 func createSchema(db *pg.DB) error {
-	models := []interface{}{(*Stream)(nil), (*Event)(nil)}
+	models := []interface{}{(*stream)(nil), (*event)(nil)}
 
 	for _, model := range models {
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{Temp: false, IfNotExists: true})
